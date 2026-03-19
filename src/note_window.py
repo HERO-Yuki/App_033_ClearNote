@@ -7,7 +7,7 @@ from __future__ import annotations
 import threading
 from typing import TYPE_CHECKING, Callable
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer
 from PyQt6.QtGui import QFont, QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTextEdit,
@@ -179,15 +179,18 @@ class NoteWindow(QWidget):
         self.status_label.setObjectName("statusLabel")
         bottom_layout.addWidget(self.status_label)
 
-        cancel_btn = QPushButton("キャンセル (Esc)")
+        cancel_btn = QPushButton("✕ キャンセル (Esc)")
         cancel_btn.setFont(small_font)
         cancel_btn.setObjectName("cancelBtn")
         cancel_btn.clicked.connect(self.hide_window)
         bottom_layout.addWidget(cancel_btn)
 
-        self.save_btn = QPushButton("保存 (Ctrl+S)")
-        self.save_btn.setFont(QFont("Segoe UI", 10, QFont.Weight.Bold))
+        # 保存ボタンを強調（大きく、太く）
+        save_font = QFont("Segoe UI", 12, QFont.Weight.Bold)
+        self.save_btn = QPushButton("💾 保存 (Ctrl+S)")
+        self.save_btn.setFont(save_font)
         self.save_btn.setObjectName("saveBtn")
+        self.save_btn.setMinimumHeight(38)
         self.save_btn.clicked.connect(self._request_save)
         bottom_layout.addWidget(self.save_btn)
 
@@ -215,7 +218,7 @@ class NoteWindow(QWidget):
                 color: #cdd6f4;
             }
             #titleBar {
-                background-color: #181825;
+                background-color: #11111b;
                 border-bottom: 1px solid #313244;
             }
             #titleLabel {
@@ -232,8 +235,12 @@ class NoteWindow(QWidget):
                 background-color: #f38ba8;
                 color: #1e1e2e;
             }
-            #optBar, #bottomBar {
+            #optBar {
                 background-color: #181825;
+            }
+            #bottomBar {
+                background-color: #181825;
+                border-top: 1px solid #313244;
             }
             #optLabel, #statusLabel {
                 color: #6c7086;
@@ -263,7 +270,7 @@ class NoteWindow(QWidget):
                 background-color: #1e1e2e;
                 color: #cdd6f4;
                 border: none;
-                padding: 12px 16px;
+                padding: 20px 24px;
                 selection-background-color: #89b4fa;
                 selection-color: #1e1e2e;
             }
@@ -271,8 +278,9 @@ class NoteWindow(QWidget):
                 background-color: #89b4fa;
                 color: #1e1e2e;
                 border: none;
-                border-radius: 5px;
-                padding: 5px 16px;
+                border-radius: 6px;
+                padding: 8px 20px;
+                font-weight: bold;
             }
             #saveBtn:hover {
                 background-color: #b4d0ff;
@@ -359,13 +367,15 @@ class NoteWindow(QWidget):
     # ── 表示・非表示 ──────────────────────────
 
     def show_window(self):
+        """ウィンドウを表示し、確実にフォーカスを設定"""
         self._center_on_screen()
         self._populate_templates()
         self._refresh_history_menu()
         self.show()
         self.raise_()
         self.activateWindow()
-        self.text_edit.setFocus()
+        # ウィンドウが完全にアクティブになってからフォーカス設定（遅さは罪）
+        QTimer.singleShot(0, self.text_edit.setFocus)
 
     def hide_window(self):
         self.hide()
@@ -376,17 +386,20 @@ class NoteWindow(QWidget):
     # ── 保存 ─────────────────────────────────
 
     def _request_save(self):
+        """保存リクエスト - ボタン状態のフィードバックを強化"""
         content = self.text_edit.toPlainText().strip()
         if not content:
-            self.status_label.setText("テキストを入力してください")
+            self.status_label.setText("⚠ テキストを入力してください")
             return
 
         tags_raw = self.tag_input.text().strip()
         tags = [t.strip() for t in tags_raw.split(",") if t.strip()] if tags_raw else []
         template_name = self.template_combo.currentText()
 
+        # 処理中の視覚的フィードバック（やり過ぎてちょうどよい）
         self.save_btn.setEnabled(False)
-        self.status_label.setText("保存中...")
+        self.save_btn.setText("⏳ 処理中...")
+        self.status_label.setText("💾 保存中...")
 
         thread = threading.Thread(
             target=self._save_in_thread,
@@ -399,12 +412,16 @@ class NoteWindow(QWidget):
         self.on_save(content, tags, template_name)
 
     def on_save_success(self, title: str, filepath: str):
-        """メインスレッドから呼ばれる (保存成功時)"""
+        """メインスレッドから呼ばれる (保存成功時) - 完了フィードバックを追加"""
+        self.status_label.setText("✅ 保存完了！")
+        self.save_btn.setText("💾 保存 (Ctrl+S)")
         self.save_btn.setEnabled(True)
         self._refresh_history_menu()
-        self.hide_window()
+        # 短いディレイで達成感を演出してから閉じる（やり過ぎてちょうどよい）
+        QTimer.singleShot(150, self.hide_window)
 
     def on_save_error(self, message: str):
         """メインスレッドから呼ばれる (保存失敗時)"""
+        self.status_label.setText(f"❌ エラー: {message}")
+        self.save_btn.setText("💾 保存 (Ctrl+S)")
         self.save_btn.setEnabled(True)
-        self.status_label.setText(f"エラー: {message}")
