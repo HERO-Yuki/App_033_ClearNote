@@ -1,0 +1,12 @@
+# Core
+pyyaml
+python-dotenv
+
+# GUI / System Tray
+PyQt6
+
+# Global Hotkey
+keyboard
+
+# AI
+google-generativeai

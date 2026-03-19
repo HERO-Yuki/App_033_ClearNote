@@ -1,0 +1,39 @@
+app:
+  name: "ClearNote"
+  version: "0.1.0"
+  debug: false
+
+# グローバルホットキー (keyboard ライブラリ形式)
+hotkey: "ctrl+shift+space"
+
+obsidian:
+  # "auto" でDropboxを自動検出 → Dropbox/アプリ/remotely-save/sin-Vault を使用
+  # 手動指定する場合は絶対パスを記入 (例: "C:/Users/yourname/Dropbox/MyVault")
+  vault_path: "auto"
+  # Vault内の保存先フォルダ (Vault ルートからの相対パス)
+  inbox_folder: "000_Inbox"
+
+note:
+  # ファイル名形式: "title"=AIタイトル or 1行目, "timestamp"=日時のみ
+  filename_format: "title"
+  # デフォルトテンプレート (templates/ フォルダ内のファイル名、拡張子なし)
+  default_template: "default"
+  # Gemini APIでタイトルを自動生成するか
+  auto_title_with_ai: true
+  # タグ区切り文字
+  tag_separator: ","
+
+ai:
+  provider: "gemini"
+  model: "gemini-2.5-flash"
+  # タイトル生成のための最大文字数
+  max_content_for_title: 500
+
+ui:
+  # ウィンドウ幅・高さ (px)
+  window_width: 680
+  window_height: 460
+  # フォントサイズ
+  font_size: 14
+  # 履歴に残す件数
+  history_max: 10
