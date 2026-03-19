@@ -6,12 +6,13 @@ from __future__ import annotations
 
 import os
 import re
+from typing import Any
 
 # モジュールレベルでキャッシュ: (api_key, model_name) → GenerativeModel
-_model_cache: dict[tuple[str, str], object] = {}
+_model_cache: dict[tuple[str, str], Any] = {}
 
 
-def _get_model(api_key: str, model_name: str):
+def _get_model(api_key: str, model_name: str) -> Any:
     """Gemini GenerativeModel を取得する。同じキー・モデルなら再利用する。"""
     key = (api_key, model_name)
     if key not in _model_cache:
@@ -60,7 +61,7 @@ def generate_title(content: str, config: dict) -> str:
         return fallback
 
 
-def warmup(config: dict):
+def warmup(config: dict) -> None:
     """
     アプリ起動時に呼び出してGeminiクライアントを事前初期化する。
     APIキーがなければ何もしない。
