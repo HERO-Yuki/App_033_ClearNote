@@ -23,7 +23,7 @@ from src.config_manager import load_config, get
 from src.template_manager import TemplateManager
 from src.history_manager import HistoryManager
 from src.note_window import NoteWindow
-from src.ai_service import generate_title
+from src.ai_service import generate_title, warmup as ai_warmup
 from src.note_saver import save_note
 from src.dropbox_detector import resolve_vault_path
 
@@ -46,6 +46,14 @@ class ClearNoteApp:
         self.history_manager = HistoryManager(
             BASE_DIR / "history.json", max_entries=history_max
         )
+
+        # Vault パスを起動時に解決してキャッシュ (保存時の遅延を排除)
+        vault_path_raw = get(config, "obsidian", "vault_path", default="auto")
+        try:
+            self._vault_path = resolve_vault_path(vault_path_raw)
+        except RuntimeError as e:
+            self._vault_path = ""
+            print(f"[ClearNote] Vault パス解決失敗: {e}")
 
         self.window = NoteWindow(
             config=config,
@@ -89,7 +97,7 @@ class ClearNoteApp:
 
         menu.addSeparator()
 
-        quit_action = QAction("✕  終了", menu)
+        quit_action = QAction("✕  終了 (アプリを完全に閉じる)", menu)
         quit_action.triggered.connect(QApplication.quit)
         menu.addAction(quit_action)
 
@@ -153,8 +161,11 @@ class ClearNoteApp:
                 from src.ai_service import _fallback_title
                 title = _fallback_title(content)
 
-            vault_path_raw = get(self.config, "obsidian", "vault_path", default="auto")
-            vault_path = resolve_vault_path(vault_path_raw)
+            vault_path = self._vault_path  # 起動時にキャッシュ済み
+            if not vault_path:
+                raise ValueError(
+                    "Vault パスが解決できていません。config.yaml の obsidian.vault_path を確認してください。"
+                )
             inbox_folder = get(self.config, "obsidian", "inbox_folder", default="000_Inbox")
             filename_format = get(self.config, "note", "filename_format", default="title")
 
@@ -205,6 +216,12 @@ def main():
         target=quick_note.register_hotkey, daemon=True
     )
     hotkey_thread.start()
+
+    # Gemini クライアントを事前初期化して初回保存を高速化
+    warmup_thread = threading.Thread(
+        target=ai_warmup, args=(config,), daemon=True
+    )
+    warmup_thread.start()
 
     # 起動通知
     QTimer.singleShot(

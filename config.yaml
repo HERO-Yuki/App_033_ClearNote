@@ -33,7 +33,10 @@ ui:
   # ウィンドウ幅・高さ (px)
   window_width: 680
   window_height: 460
-  # フォントサイズ
-  font_size: 14
+  # フォントファミリー (未インストールの場合は自動フォールバック)
+  # 例: "Zen Kaku Gothic New", "BIZ UDGothic", "Yu Gothic", "Meiryo", "Segoe UI"
+  font_family: "Zen Kaku Gothic New"
+  # フォントサイズ (pt)
+  font_size: 12
   # 履歴に残す件数
   history_max: 10

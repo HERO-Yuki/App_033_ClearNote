@@ -15,6 +15,8 @@ from PyQt6.QtWidgets import (
     QFrame, QSizeGrip, QApplication, QMenu, QToolButton,
 )
 
+from src.markdown_highlighter import MarkdownHighlighter
+
 if TYPE_CHECKING:
     from src.template_manager import TemplateManager
     from src.history_manager import HistoryManager
@@ -66,9 +68,17 @@ class NoteWindow(QWidget):
             )
 
     def _setup_ui(self):
-        font_size = self.config.get("ui", {}).get("font_size", 14)
-        main_font = QFont("Segoe UI", font_size)
-        small_font = QFont("Segoe UI", 10)
+        ui_cfg = self.config.get("ui", {})
+        font_size = ui_cfg.get("font_size", 12)
+        font_family = ui_cfg.get("font_family", "Segoe UI")
+
+        main_font = QFont()
+        main_font.setFamilies([font_family, "Yu Gothic", "BIZ UDGothic", "Meiryo", "Segoe UI"])
+        main_font.setPointSize(font_size)
+
+        small_font = QFont()
+        small_font.setFamilies([font_family, "Yu Gothic", "BIZ UDGothic", "Meiryo", "Segoe UI"])
+        small_font.setPointSize(10)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
@@ -141,6 +151,7 @@ class NoteWindow(QWidget):
         self.text_edit.setPlaceholderText("メモを入力... (Ctrl+S で保存、Esc でキャンセル)")
         self.text_edit.setObjectName("textEdit")
         self.text_edit.setAcceptRichText(False)
+        self._highlighter = MarkdownHighlighter(self.text_edit.document())
         root.addWidget(self.text_edit)
 
         # ── 区切り線 ──
