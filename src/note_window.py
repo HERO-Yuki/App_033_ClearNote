@@ -123,6 +123,7 @@ class NoteWindow(QWidget):
         self.template_combo.setFont(small_font)
         self.template_combo.setObjectName("templateCombo")
         self.template_combo.setFixedWidth(150)
+        self.template_combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)  # 自動補完無効
         self._populate_templates()
         self.template_combo.currentTextChanged.connect(self._on_template_changed)
         opt_layout.addWidget(self.template_combo)
@@ -138,6 +139,8 @@ class NoteWindow(QWidget):
         self.tag_input.setFont(small_font)
         self.tag_input.setPlaceholderText("idea, project, work  (カンマ区切り)")
         self.tag_input.setObjectName("tagInput")
+        # オートコンプリートを無効化
+        self.tag_input.setCompleter(None)
         opt_layout.addWidget(self.tag_input)
 
         root.addWidget(opt_bar)
@@ -148,7 +151,7 @@ class NoteWindow(QWidget):
         # ── テキストエリア ──
         self.text_edit = QTextEdit()
         self.text_edit.setFont(main_font)
-        self.text_edit.setPlaceholderText("メモを入力... (Ctrl+S で保存、Esc でキャンセル)")
+        self.text_edit.setPlaceholderText("")  # プレースホルダーを削除（被り防止）
         self.text_edit.setObjectName("textEdit")
         self.text_edit.setAcceptRichText(False)
         self._highlighter = MarkdownHighlighter(self.text_edit.document())
